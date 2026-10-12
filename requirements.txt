@@ -1,0 +1,12 @@
+# SEACE Engineering & CAD Intelligence Engine
+pydantic>=2.5.0
+pandas>=2.0.0
+pyyaml>=6.0.1
+pdfplumber>=0.10.0
+requests>=2.31.0
+playwright>=1.40.0
+pytest>=7.4.0
+
+# Opcionales para renderizado CAD directo:
+# cadquery>=2.4.0  (Recomendado instalar vía conda/mamba o pip en entorno dedicado)
+# build123d>=0.6.0

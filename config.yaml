@@ -1,0 +1,26 @@
+database:
+  path: "data/seace_intelligence.db"
+  backup_dir: "data/backups"
+
+disciplines:
+  mecanica:
+    keywords: ["ELECTROMECANIC", "ESTRUCTURA METALICA", "CALDERERIA", "BOMBEO", "PUENTE GRUA", "REDUCTOR", "TUBERIA"]
+    default_standards: ["ISO 1101", "ASME B31.3", "ASME B16.5", "AWS D1.1", "ISO 2768-m"]
+  electrica:
+    keywords: ["SUBESTACION", "TRANSFORMADOR", "TABLERO ELECTRICO", "LINEA DE TRANSMISION", "CELDAS DE MEDIA TENSION"]
+    default_standards: ["IEC 60076", "IEC 61439", "IEEE C57", "CNE"]
+  automatizacion:
+    keywords: ["SCADA", "PLC", "INSTRUMENTACION", "TRANSMISOR", "VARIADOR DE FRECUENCIA", "SISTEMA DE CONTROL"]
+    default_standards: ["IEC 61131-3", "ISA-5.1", "IEC 62443"]
+  civil:
+    keywords: ["PLANTA DE TRATAMIENTO", "RESERVORIO", "MOVIMIENTO DE TIERRAS", "PAVIMENTACION", "BOCATOMA"]
+    default_standards: ["ACI 318", "AISC 360", "RNE"]
+
+seace_crawler:
+  base_url: "https://prod2.seace.gob.pe/seacebus-uiwd-pub/buscadorPublico/buscadorPublico.xhtml"
+  timeout_ms: 45000
+  headless: false
+
+export:
+  output_dir: "exports"
+  cad_format: "cadquery" # Opciones: cadquery, freecad_python, openscad

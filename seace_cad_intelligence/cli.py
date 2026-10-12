@@ -66,6 +66,27 @@ def poblar_demo(repo: AdaptiveKnowledgeRepository):
                 RequisitoTecnico("Frecuencia", 60.0, "hz"),
                 RequisitoTecnico("Corriente de cortocircuito", 25.0, "ka")
             ]
+        ),
+        ProyectoIngenieria(
+            id_referencia="LP-SM-15-2024-ELECTROPUNO",
+            fuente_origen="SEACE_OCDS",
+            titulo_proyecto="CREACION Y MEJORAMIENTO DE REDES Y LINEA PRIMARIA 22.9 KV Y SUBESTACIONES EN ZONAS RURALES - PUNO",
+            disciplina="Electrica",
+            entidad_o_cliente="ELECTRO PUNO S.A.A.",
+            presupuesto_referencial=4850000.0,
+            monto_adjudicado=4680000.0,
+            postor_ganador="CONSORCIO ELECTROMECANICO ALTIPLANO",
+            ruc_ganador="20448192033",
+            normas_identificadas=["CNE SUMINISTRO 2011", "R.D. 018-2003-EM/DGE", "NTP 370.258", "NTP 339.027", "IEC 60076", "IEC 61089", "IEC 60071-2", "ASTM B399", "ASTM A153"],
+            requisitos=[
+                RequisitoTecnico("Tensión nominal MT", 22.9, "kv", norma_asociada="CNE Suministro"),
+                RequisitoTecnico("Sección conductor AAAC", 35.0, "mm2", norma_asociada="NTP 370.258"),
+                RequisitoTecnico("Potencia transformador SED", 100.0, "kva", norma_asociada="IEC 60076"),
+                RequisitoTecnico("Altura poste C.A.C.", 12.0, "m", norma_asociada="NTP 339.027"),
+                RequisitoTecnico("Nivel básico de aislamiento BIL", 150.0, "kv", norma_asociada="IEC 60071-2"),
+                RequisitoTecnico("Tensión asignada Cut-Out", 27.0, "kv", norma_asociada="ANSI C37.42"),
+                RequisitoTecnico("Tensión nominal Pararrayos ZnO", 21.0, "kv", norma_asociada="IEC 60099-4")
+            ]
         )
     ]
     for p in proyectos_demo:
@@ -86,14 +107,18 @@ def main():
     # Comando: search
     p_search = subparsers.add_parser("search", help="Buscar proyectos por criterios")
     p_search.add_argument("--disciplina", type=str, help="Filtrar por disciplina (Mecanica, Electrica, etc.)")
-    p_search.add_argument("--norma", type=str, help="Filtrar por norma (ej. ASME, ISO, IEC)")
+    p_search.add_argument("--norma", type=str, help="Filtrar por norma (ej. ASME, ISO, IEC, CNE, NTP)")
     p_search.add_argument("--texto", type=str, help="Texto libre en título o postor")
 
     # Comando: generate-cad
-    p_cad = subparsers.add_parser("generate-cad", help="Generar script CAD paramétrico")
-    p_cad.add_argument("--tipo", type=str, required=True, choices=["brida", "eje", "skid", "tablero"], help="Tipo de componente")
+    p_cad = subparsers.add_parser("generate-cad", help="Generar script CAD paramétrico o archivo DXF")
+    p_cad.add_argument("--tipo", type=str, required=True,
+                       choices=["brida", "eje", "skid", "tablero", "poste", "ps1", "pa1", "pr1", "sab1", "retenida"],
+                       help="Tipo de componente electromecánico o estructural")
     p_cad.add_argument("--motor", type=str, default="cadquery", choices=["cadquery", "build123d"], help="Motor CAD")
-    p_cad.add_argument("--output", type=str, default="exports/componente_parametrico.py", help="Ruta del script generado")
+    p_cad.add_argument("--formato", type=str, default="python", choices=["python", "dxf"], help="Formato de salida (script python o plano DXF)")
+    p_cad.add_argument("--output", type=str, default="exports/componente_parametrico.py", help="Ruta del archivo generado")
+    p_cad.add_argument("--modelo", type=str, default="12/400", choices=["12/300", "12/400", "13/400"], help="Modelo de poste C.A.C.")
     p_cad.add_argument("--nps", type=str, default="2", help="Tamaño nominal de tubería (para brida)")
     p_cad.add_argument("--alto", type=float, default=1200.0, help="Altura en mm (para tablero o skid)")
     p_cad.add_argument("--ancho", type=float, default=800.0, help="Ancho en mm (para tablero o skid)")
@@ -150,13 +175,18 @@ def main():
             "alto": args.alto,
             "ancho": args.ancho,
             "profundidad": args.prof,
-            "largo": args.alto
+            "largo": args.alto,
+            "modelo": args.modelo
         }
-        codigo = CADCodeExporter.generar_codigo(args.tipo, params, motor=args.motor)
-        os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
-        with open(args.output, "w", encoding="utf-8") as f:
-            f.write(codigo)
-        print(f"[OK] Script CAD parametrico ({args.motor}) generado con exito en: {args.output}")
+        if args.formato == "dxf":
+            salida = CADCodeExporter.exportar_dxf(args.tipo, args.output, params)
+            print(f"[OK] Archivo DXF generado con exito en: {salida}")
+        else:
+            codigo = CADCodeExporter.generar_codigo(args.tipo, params, motor=args.motor)
+            os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
+            with open(args.output, "w", encoding="utf-8") as f:
+                f.write(codigo)
+            print(f"[OK] Script CAD parametrico ({args.motor}) generado con exito en: {args.output}")
 
     elif args.comando == "generate-tdr":
         precedente = repo.obtener_por_id(args.ref)

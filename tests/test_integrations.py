@@ -90,3 +90,30 @@ def test_parametric_enclosure_cad():
     # Export manager routing
     codigo_exp = CADCodeExporter.generar_codigo("tablero", {"alto": 1000}, motor="build123d")
     assert "from build123d import *" in codigo_exp
+
+
+def test_primary_line_cad_and_dxf(tmp_path):
+    # Generación de scripts CadQuery de armados DGE
+    codigo_ps1 = CADCodeExporter.generar_codigo("ps1")
+    assert "DGE PS-1" in codigo_ps1
+    assert "ANSI 56-3" in codigo_ps1
+
+    codigo_sab1 = CADCodeExporter.generar_codigo("sab1")
+    assert "DGE SAB-1" in codigo_sab1
+    assert "100 kVA" in codigo_sab1
+
+    codigo_pr1 = CADCodeExporter.generar_codigo("pr1")
+    assert "DGE PR-1" in codigo_pr1
+    assert "Cut-Out" in codigo_pr1
+
+    # Exportación DXF directa compatible con AutoCAD
+    dxf_ps1 = os.path.join(tmp_path, "ps1.dxf")
+    CADCodeExporter.exportar_dxf("ps1", dxf_ps1)
+    assert os.path.exists(dxf_ps1)
+    assert os.path.getsize(dxf_ps1) > 1000
+
+    dxf_sab1 = os.path.join(tmp_path, "sab1.dxf")
+    CADCodeExporter.exportar_dxf("sab1", dxf_sab1)
+    assert os.path.exists(dxf_sab1)
+    assert os.path.getsize(dxf_sab1) > 1000
+

@@ -29,22 +29,28 @@ seace-cad-intelligence/
 │   │   ├── models.py               # Entidades universales de ingeniería
 │   │   ├── adapters.py             # Clase base abstracta de ingestión (Patrón Estrategia)
 │   │   └── analyzer.py             # Motor léxico/semántico de normas y dimensiones
+│   ├── integrations/               # Integración con repositorios especializados
+│   │   ├── ocdskit_bridge.py       # Ingestión de paquetes OCDS (open-contracting/ocdskit)
+│   │   ├── docling_bridge.py       # Minería de tablas y materiales (IBM Docling / pdfplumber)
+│   │   └── seace_scraper_engine.py # Scraping batch con parameters.csv (Ed1123/seace-scraper)
 │   ├── extractors/                 # Conectores adaptativos de datos
 │   │   ├── seace_ocds_adapter.py   # Ingestor masivo de datasets OECE/CONOSCE
 │   │   ├── seace_web_crawler.py    # Crawler interactivo con Playwright para SEACE 3.0
 │   │   └── pdf_spec_parser.py      # Parser de PDFs (Bases Integradas / TDRs)
 │   ├── storage/                    # Persistencia de conocimiento
 │   │   └── repository.py           # Repositorio híbrido SQLite + JSON
-│   ├── cad_bridge/                 # Generación CAD Paramétrica
+│   ├── cad_bridge/                 # Generación CAD Paramétrica (CadQuery & build123d)
 │   │   ├── parametric_flange.py    # Bridas ASME B16.5 Clase 150
 │   │   ├── parametric_shaft.py     # Ejes escalonados ISO 2768-mK / DIN 6885
 │   │   ├── parametric_chassis.py   # Skids y bastidores estructurales AISC 360
+│   │   ├── parametric_enclosure.py # Gabinetes eléctricos IEC 61439 (build123d / CadQuery)
 │   │   └── export_manager.py       # Coordinador y exportador de código CAD
 │   ├── templates/                  # Documentación de autoría
 │   │   └── tdr_generator.py        # Generador de TDRs y expedientes técnicos
 │   └── cli.py                      # Interfaz de línea de comandos (CLI)
 └── tests/
-    └── test_pipeline.py            # Pruebas unitarias automatizadas
+    ├── test_pipeline.py            # Pruebas unitarias de pipeline
+    └── test_integrations.py        # Pruebas de integraciones (OCDS, Docling, CAD)
 ```
 
 ---

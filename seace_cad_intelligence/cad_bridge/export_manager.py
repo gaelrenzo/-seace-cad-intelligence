@@ -8,13 +8,14 @@ from typing import Dict, Any
 from .parametric_flange import FlangeParametricGenerator
 from .parametric_shaft import SteppedShaftParametricGenerator
 from .parametric_chassis import StructuralSkidParametricGenerator
+from .parametric_enclosure import ElectricalEnclosureParametricGenerator
 
 
 class CADCodeExporter:
-    """Fábrica y exportador de scripts CAD paramétricos."""
+    """Fábrica y exportador de scripts CAD paramétricos (CadQuery / build123d)."""
 
     @classmethod
-    def generar_codigo(cls, tipo_componente: str, params: Dict[str, Any] = None) -> str:
+    def generar_codigo(cls, tipo_componente: str, params: Dict[str, Any] = None, motor: str = "cadquery") -> str:
         params = params or {}
         tipo = tipo_componente.lower()
 
@@ -33,8 +34,16 @@ class CADCodeExporter:
             alto = float(params.get("alto", 100.0))
             return StructuralSkidParametricGenerator.generar_script_cadquery(largo, ancho, alto)
 
+        elif "enclosure" in tipo or "tablero" in tipo or "gabinete" in tipo:
+            alto = float(params.get("alto", 1200.0))
+            ancho = float(params.get("ancho", 800.0))
+            prof = float(params.get("profundidad", 400.0))
+            if motor.lower() == "build123d":
+                return ElectricalEnclosureParametricGenerator.generar_script_build123d(alto, ancho, prof)
+            return ElectricalEnclosureParametricGenerator.generar_script_cadquery(alto, ancho, prof)
+
         else:
-            raise ValueError(f"Componente '{tipo_componente}' no reconocido. Tipos disponibles: brida, eje, skid.")
+            raise ValueError(f"Componente '{tipo_componente}' no reconocido. Tipos disponibles: brida, eje, skid, tablero.")
 
     @classmethod
     def guardar_script(cls, tipo_componente: str, ruta_salida: str, params: Dict[str, Any] = None) -> str:

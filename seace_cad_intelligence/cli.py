@@ -91,9 +91,13 @@ def main():
 
     # Comando: generate-cad
     p_cad = subparsers.add_parser("generate-cad", help="Generar script CAD paramétrico")
-    p_cad.add_argument("--tipo", type=str, required=True, choices=["brida", "eje", "skid"], help="Tipo de componente")
+    p_cad.add_argument("--tipo", type=str, required=True, choices=["brida", "eje", "skid", "tablero"], help="Tipo de componente")
+    p_cad.add_argument("--motor", type=str, default="cadquery", choices=["cadquery", "build123d"], help="Motor CAD")
     p_cad.add_argument("--output", type=str, default="exports/componente_parametrico.py", help="Ruta del script generado")
     p_cad.add_argument("--nps", type=str, default="2", help="Tamaño nominal de tubería (para brida)")
+    p_cad.add_argument("--alto", type=float, default=1200.0, help="Altura en mm (para tablero o skid)")
+    p_cad.add_argument("--ancho", type=float, default=800.0, help="Ancho en mm (para tablero o skid)")
+    p_cad.add_argument("--prof", type=float, default=400.0, help="Profundidad en mm (para tablero)")
 
     # Comando: generate-tdr
     p_tdr = subparsers.add_parser("generate-tdr", help="Generar TDR de nuevo proyecto basado en precedentes")
@@ -101,6 +105,18 @@ def main():
     p_tdr.add_argument("--titulo", type=str, required=True, help="Título del nuevo proyecto de tu autoría")
     p_tdr.add_argument("--autor", type=str, default="Ing. Renzo Mamani", help="Nombre del proyectista")
     p_tdr.add_argument("--output", type=str, default="exports/TDR_Nuevo_Proyecto.md", help="Ruta del archivo Markdown")
+
+    # Comando: ocds-unpack (Integración ocdskit)
+    p_ocds = subparsers.add_parser("ocds-unpack", help="Importar paquete de entregas OCDS (JSON) al repositorio")
+    p_ocds.add_argument("--archivo", type=str, required=True, help="Ruta al archivo JSON OCDS del OECE")
+
+    # Comando: batch-template (Integración seace-scraper)
+    p_batch = subparsers.add_parser("batch-template", help="Generar plantilla parameters.csv para scraping batch")
+    p_batch.add_argument("--output", type=str, default="parameters_template.csv", help="Ruta del archivo CSV")
+
+    # Comando: parse-docling (Integración Docling/pdfplumber)
+    p_doc = subparsers.add_parser("parse-docling", help="Minería profunda de metrados y materiales en PDF")
+    p_doc.add_argument("--pdf", type=str, required=True, help="Ruta al expediente técnico en PDF")
 
     args = parser.parse_args()
 
@@ -129,9 +145,18 @@ def main():
             print(f"  Normas detectadas: {', '.join(r['normas_identificadas'])}\n")
 
     elif args.comando == "generate-cad":
-        params = {"nps": args.nps}
-        ruta = CADCodeExporter.guardar_script(args.tipo, args.output, params)
-        print(f"[OK] Script CAD parametrico generado con exito en: {ruta}")
+        params = {
+            "nps": args.nps,
+            "alto": args.alto,
+            "ancho": args.ancho,
+            "profundidad": args.prof,
+            "largo": args.alto
+        }
+        codigo = CADCodeExporter.generar_codigo(args.tipo, params, motor=args.motor)
+        os.makedirs(os.path.dirname(args.output) or ".", exist_ok=True)
+        with open(args.output, "w", encoding="utf-8") as f:
+            f.write(codigo)
+        print(f"[OK] Script CAD parametrico ({args.motor}) generado con exito en: {args.output}")
 
     elif args.comando == "generate-tdr":
         precedente = repo.obtener_por_id(args.ref)
@@ -152,6 +177,25 @@ def main():
         with open(args.output, "w", encoding="utf-8") as f:
             f.write(doc)
         print(f"[OK] Expediente tecnico y TDR generado con exito en: {args.output}")
+
+    elif args.comando == "ocds-unpack":
+        from .integrations.ocdskit_bridge import OCDSPackageBridge
+        proyectos = OCDSPackageBridge.procesar_archivo_ocds(args.archivo)
+        for p in proyectos:
+            repo.guardar_proyecto(p)
+        print(f"[OK] Se importaron {len(proyectos)} proyectos OCDS al repositorio.")
+
+    elif args.comando == "batch-template":
+        from .integrations.seace_scraper_engine import BatchSEACEScraperEngine
+        ruta = BatchSEACEScraperEngine.generar_plantilla_parametros(args.output)
+        print(f"[OK] Plantilla generada en: {ruta}")
+
+    elif args.comando == "parse-docling":
+        from .integrations.docling_bridge import AdvancedDocumentMiner
+        partidas = AdvancedDocumentMiner.extraer_tablas_metrados(args.pdf)
+        print(f"\n[+] Se identificaron {len(partidas)} partidas de metrado en el documento.")
+        for p in partidas[:10]:
+            print(f"  - Ítem {p['item']}: {p['descripcion'][:45]} ({p['metrado']} {p['unidad']})")
 
     else:
         parser.print_help()
